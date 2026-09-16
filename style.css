@@ -71,6 +71,7 @@ main { min-height: 100vh; }
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
+  animation: breathe 4s ease-in-out infinite;
 }
 
 .concierge {
@@ -107,10 +108,11 @@ main { min-height: 100vh; }
 
 .kitten {
   position: absolute;
-  width: 64px;
+  width: 72px;
   height: auto;
-  animation: walk 20s linear infinite, bounce 0.6s ease-in-out infinite alternate;
+  animation: walk 14s linear infinite, bounce 0.6s ease-in-out infinite alternate;
   left: -100px;
+  will-change: transform;
 }
 
 @keyframes walk {
@@ -123,6 +125,19 @@ main { min-height: 100vh; }
   100% { transform: translateY(-8px); }
 }
 
+@keyframes breathe {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 60px rgba(45,212,191,0.35); }
+  50% { box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 85px rgba(45,212,191,0.55); }
+}
+@keyframes floatText {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 /* Hero text */
 .hero-text {
   position: absolute;
@@ -131,6 +146,7 @@ main { min-height: 100vh; }
   z-index: 4;
   max-width: 420px;
   text-align: right;
+  animation: floatText 6s ease-in-out infinite;
 }
 
 .hero-text h1 {
@@ -146,13 +162,13 @@ main { min-height: 100vh; }
   line-height: 1.7;
 }
 
-/* Chat panel */
+/* Chat panel — 50% wider (340→510) */
 .chat-panel {
   position: absolute;
-  right: 3%;
+  right: 2.5%;
   bottom: 5%;
-  width: 340px;
-  max-width: calc(100vw - 6%);
+  width: 510px;
+  max-width: calc(100vw - 4%);
   background: rgba(255, 248, 240, 0.82);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border);
@@ -163,6 +179,7 @@ main { min-height: 100vh; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: glowPulse 3.5s ease-in-out infinite;
 }
 
 .chat-head {
