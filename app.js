@@ -137,7 +137,7 @@ document.querySelector('[data-open-chat]')?.addEventListener('click', openChat);
 document.querySelector('[data-close-chat]')?.addEventListener('click', () => { chat.hidden = true; });
 
 // ponytail: global rate limit, replace with Redis if multi-instance
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv[1]}`) {
   function demo() {
     const assert = (cond, msg) => { if (!cond) throw new Error('FAIL: ' + msg); };
     assert(esc('<b>hi</b>') === '&lt;b&gt;hi&lt;/b&gt;', 'esc should escape HTML');

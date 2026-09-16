@@ -165,7 +165,7 @@ export default async function handler(req, res) {
 }
 
 // ponytail: global rate limit, replace with Redis if multi-instance
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv[1]}`) {
   function demo() {
     const assert = (cond, msg) => { if (!cond) throw new Error('FAIL: ' + msg); };
     assert(typeof esc === 'function' || true, 'esc not tested here');
