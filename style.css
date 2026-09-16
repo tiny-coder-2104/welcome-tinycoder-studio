@@ -96,23 +96,31 @@ main { min-height: 100vh; }
   pointer-events: none;
 }
 
-/* Cat */
+/* Cat — emoji kitten, zero image cost, always visible */
 .cat-layer {
   position: absolute;
   bottom: 15%;
   left: 0;
   z-index: 2;
   width: 100%;
+  height: 80px;
   pointer-events: none;
 }
 
-.kitten {
+.kitten-wrap {
   position: absolute;
-  width: 72px;
-  height: auto;
-  animation: walk 14s linear infinite, bounce 0.6s ease-in-out infinite alternate;
   left: -100px;
+  bottom: 0;
+  animation: walk 14s linear infinite;
   will-change: transform;
+}
+
+.kitten {
+  display: block;
+  font-size: 56px;
+  line-height: 1;
+  animation: bounce 0.6s ease-in-out infinite alternate;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.25));
 }
 
 @keyframes walk {
@@ -340,6 +348,6 @@ footer {
     width: calc(100vw - 4%);
     max-height: 70vh;
   }
-  .kitten { width: 48px; }
+  .kitten { font-size: 42px; }
   .lobby { min-height: 100vh; background-size: cover; }
 }
