@@ -53,14 +53,14 @@ main { min-height: 100vh; }
 .lobby-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255,248,240,0.1) 0%, rgba(255,248,240,0.85) 40%, rgba(255,248,240,0.95) 100%);
+  background: linear-gradient(180deg, rgba(255,248,240,0.1) 0%, rgba(255,248,240,0.65) 40%, rgba(255,248,240,0.75) 100%);
   z-index: 1;
 }
 
 /* Concierge */
 .concierge-layer {
   position: absolute;
-  left: 5%;
+  left: 12%;
   bottom: 18%;
   z-index: 3;
   transform: translateX(-50%);
@@ -130,11 +130,12 @@ main { min-height: 100vh; }
   bottom: 5%;
   width: 340px;
   max-width: calc(100vw - 6%);
-  background: var(--card);
+  background: rgba(255, 248, 240, 0.82);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border);
+  border-top: 1px solid var(--sage);
   border-radius: 16px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 60px var(--teal-glow);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12), 0 0 80px rgba(45,212,191,0.45);
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -293,5 +294,5 @@ footer {
     max-height: 70vh;
   }
   .kitten { width: 48px; }
-  .lobby { min-height: 60vh; background-size: cover; }
+  .lobby { min-height: 100vh; background-size: cover; }
 }
