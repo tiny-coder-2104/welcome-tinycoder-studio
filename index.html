@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="TinyCoder Studio Virtual Office — AI chatbots, automation, and web apps. Based in Davao City, Philippines." />
+    <title>TinyCoder Studio • Virtual Office</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <span class="brand">TinyCoder Studio</span>
+        <span class="location">🇵🇭 Davao City, PH</span>
+      </nav>
+    </header>
+
+    <main>
+      <section class="lobby">
+        <div class="lobby-bg"></div>
+        <div class="concierge-layer">
+          <img src="/concierge.png" alt="Concierge" class="concierge" />
+        </div>
+        <div class="cat-layer">
+          <img src="/cat_sprite.png" alt="Kitten" class="kitten" />
+        </div>
+        <div class="hero-text">
+          <h1>Welcome to TinyCoder Studio</h1>
+          <p>Your virtual office concierge. Ask about AI chatbots, automation, web apps, or your next project.</p>
+        </div>
+        <div class="chat-panel" id="chat">
+          <div class="chat-head">
+            <span>Concierge • Online</span>
+            <button data-close-chat aria-label="Close chat">✕</button>
+          </div>
+          <div class="chat-body" id="chat-body" aria-live="polite"></div>
+          <div class="faq-pills" id="fap-pills">
+            <button class="pill" data-faq="services">What do you do?</button>
+            <button class="pill" data-faq="projects">What are your projects?</button>
+            <button class="pill" data-faq="help">How can you help me?</button>
+            <button class="pill" data-faq="pricing">Pricing & process?</button>
+          </div>
+          <form class="chat-input" id="chat-form">
+            <input type="text" id="chat-text" placeholder="Ask the concierge…" autocomplete="off" />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer>© 2026 TinyCoder Studio • Virtual Office • Davao City, PH</footer>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
