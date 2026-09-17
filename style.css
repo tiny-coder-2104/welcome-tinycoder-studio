@@ -96,31 +96,38 @@ main { min-height: 100vh; }
   pointer-events: none;
 }
 
-/* Cat — emoji kitten, zero image cost, always visible */
+/* Cat — 8-frame sprite walk cycle (extracted from kitten-strip.png, transparent) */
 .cat-layer {
   position: absolute;
   bottom: 15%;
   left: 0;
   z-index: 2;
   width: 100%;
-  height: 80px;
+  height: 100px;
   pointer-events: none;
 }
 
 .kitten-wrap {
   position: absolute;
-  left: -100px;
+  left: -140px;
   bottom: 0;
   animation: walk 14s linear infinite;
   will-change: transform;
 }
 
 .kitten {
+  --fw: 110px;
   display: block;
-  font-size: 56px;
-  line-height: 1;
-  animation: bounce 0.6s ease-in-out infinite alternate;
+  width: var(--fw);
+  height: 89px;
+  background: url('/kitten-strip.png') 0 0 / calc(8 * var(--fw)) 100% repeat-x;
+  animation: frame 0.7s steps(8) infinite;
   filter: drop-shadow(0 6px 10px rgba(0,0,0,0.25));
+}
+
+@keyframes frame {
+  from { background-position: 0 0; }
+  to { background-position: calc(-8 * var(--fw)) 0; }
 }
 
 @keyframes walk {
@@ -348,6 +355,6 @@ footer {
     width: calc(100vw - 4%);
     max-height: 70vh;
   }
-  .kitten { font-size: 42px; }
+  .kitten { --fw: 80px; height: 65px; }
   .lobby { min-height: 100vh; background-size: cover; }
 }
