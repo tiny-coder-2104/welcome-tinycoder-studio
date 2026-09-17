@@ -90,11 +90,16 @@ async function send() {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: history.slice(-12) }),
+      body: JSON.stringify({ messages: history.slice(-8) }),
       signal: controller.signal
     });
     clearTimeout(timeout);
-    if (!res.ok) throw new Error('bad status');
+    if (!res.ok) {
+      // API returns friendly text for 429/400/502 — show it
+      let apiText = null;
+      try { const err = await res.json(); apiText = err.text; } catch {}
+      throw new Error(apiText || 'bad status');
+    }
     const data = await res.json();
     history.push({ role: 'assistant', content: data.text });
     tdiv.remove();
@@ -110,7 +115,9 @@ async function send() {
     tdiv.remove();
     const errMsg = e.name === 'AbortError'
       ? 'The concierge took too long to respond. Please try again.'
-      : 'Sorry, something went wrong. Please try again in a moment.';
+      : (e.message && e.message !== 'bad status' && !e.message.startsWith('Unexpected')
+          ? e.message
+          : 'Sorry, something went wrong. Please try again in a moment.');
     render({ role: 'bot', text: errMsg });
   }
 }

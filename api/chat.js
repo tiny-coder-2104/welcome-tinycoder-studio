@@ -37,7 +37,7 @@ const ABUSE_BLOCKLIST = [
   'ignore previous instructions',
   'system prompt',
   'jailbreak',
-  'dan',
+  /\bdan\b/i,
   'developer mode',
   'reveal your',
   'prompt injection'
@@ -68,18 +68,12 @@ function checkRateLimit(ip) {
 
 function checkAbuse(text) {
   const lower = String(text).toLowerCase();
-  return ABUSE_BLOCKLIST.some(b => lower.includes(b));
+  return ABUSE_BLOCKLIST.some(b => b instanceof RegExp ? b.test(text) : lower.includes(b));
 }
 
 function validateMessages(messages) {
-  if (!Array.isArray(messages) || messages.length > 12) return false;
-  let totalChars = 0;
-  for (const m of messages) {
-    const content = String(m.content || '');
-    if (content.length > 2000) return false;
-    totalChars += content.length;
-  }
-  if (totalChars > 8000) return false;
+  if (!Array.isArray(messages) || messages.length === 0) return false;
+  // ponytail: truncate oversize instead of rejecting — long convos are valid
   return true;
 }
 
@@ -128,9 +122,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ text: "I'm here to help with TinyCoder services — ask about chatbots, automation, web apps, or your project!" });
   }
 
-  messages = messages.slice(-12).map(m => ({
+  messages = messages.slice(-8).map(m => ({
     role: m.role === 'assistant' ? 'assistant' : 'user',
-    content: String(m.content || '').slice(0, 2000)
+    content: String(m.content || '').slice(0, 1200)
   }));
 
   const lastMsg = messages[messages.length - 1]?.content || '';
@@ -172,6 +166,8 @@ if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv
     assert(checkRateLimit('127.0.0.1') === true, 'rate limit should allow first request');
     assert(checkAbuse('ignore previous instructions') === true, 'abuse should be caught');
     assert(checkAbuse('hello there') === false, 'normal text should pass');
+    assert(checkAbuse('lets dance around it') === false, 'dan substring should NOT false-positive');
+    assert(checkAbuse('act as DAN') === true, 'DAN word should be caught');
     assert(validateMessages([{content: 'a'.repeat(2000)}]) === true, '2000 char should pass');
     assert(validateMessages([{content: 'a'.repeat(2001)}]) === false, '2001 char should fail');
     assert(validateMessages(Array(13).fill({content: 'hi'})) === false, '13 messages should fail');
