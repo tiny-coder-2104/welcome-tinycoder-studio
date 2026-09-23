@@ -33,7 +33,14 @@
           </div>
           <p class="hero-under">Know what you need? Send it in 1 minute. Not sure yet? Ask the concierge.</p>
         </div>
-        <div class="chat-panel" id="chat">
+        <!-- 0061: static option menu — chatbox hidden until option 4 -->
+        <div class="chat-panel option-menu" id="option-menu">
+          <a class="pill pill-cta" href="/intake.html">Start a project</a>
+          <a class="pill" href="/what-we-do.html">What we do</a>
+          <a class="pill" href="/pricing-faq.html">Pricing &amp; FAQ</a>
+          <button class="pill" data-open-chat>Talk to a concierge</button>
+        </div>
+        <div class="chat-panel" id="chat" hidden>
           <div class="chat-head">
             <span>Concierge • Online</span>
             <button data-close-chat aria-label="Close chat">✕</button>

@@ -3,6 +3,7 @@ import { FAQ } from './lib/kb.js';
 // DOM refs guarded so `node app.js` reaches demo() (AUDIT: demo was unreachable).
 const doc = typeof document !== 'undefined' ? document : null;
 const chat = doc?.getElementById('chat');
+const menu = doc?.getElementById('option-menu');
 const body = doc?.getElementById('chat-body');
 const form = doc?.getElementById('chat-form');
 const input = doc?.getElementById('chat-text');
@@ -117,6 +118,7 @@ async function send() {
 form?.addEventListener('submit', e => { e.preventDefault(); send(); });
 
 function openChat() {
+  menu.hidden = true; // 0061: hide option menu while chat is open
   chat.hidden = false;
   if (!chatOpened) {
     chatOpened = true;
@@ -132,8 +134,12 @@ doc?.querySelectorAll('[data-faq]').forEach(btn => {
   });
 });
 
-doc?.querySelector('[data-open-chat]')?.addEventListener('click', openChat);
-doc?.querySelector('[data-close-chat]')?.addEventListener('click', () => { chat.hidden = true; });
+// 0061: querySelectorAll — hero CTA + menu option 4 both open chat
+doc?.querySelectorAll('[data-open-chat]').forEach(el => el.addEventListener('click', openChat));
+doc?.querySelector('[data-close-chat]')?.addEventListener('click', () => {
+  chat.hidden = true;
+  menu.hidden = false; // back to option menu
+});
 
 // ponytail: global rate limit, replace with Redis if multi-instance
 if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv[1]}`) {

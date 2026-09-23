@@ -394,6 +394,24 @@ a.pill { text-decoration: none; display: inline-block; }
   cursor: pointer;
 }
 
+/* 0061: option menu — chatbox footprint, chat hidden until last option */
+.option-menu { gap: 0.5rem; padding: 1rem; }
+.option-menu .pill {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+[hidden] { display: none !important; } /* author display:flex beats UA [hidden] otherwise */
+
+/* 0061: static content pages — global * reset strips UA heading/list spacing */
+.content-page h1 { margin-bottom: 0.5rem; }
+.content-page h2 { margin: 1.5rem 0 0.5rem; font-size: 1.15rem; color: var(--terracotta); }
+.content-page p { margin-bottom: 0.75rem; }
+.content-page ul, .content-page ol { margin: 0 0 1rem; padding-left: 1.25rem; }
+.content-page li { margin-bottom: 0.35rem; }
+
 /* Footer */
 footer {
   text-align: center;
