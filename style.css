@@ -276,6 +276,18 @@ main { min-height: 100vh; }
   border-color: var(--teal);
 }
 
+/* "I have a project" CTA pill (0055) */
+.pill-cta {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  font-weight: 600;
+}
+.pill-cta:hover {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+}
+
 /* Input */
 .chat-input {
   display: flex;

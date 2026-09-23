@@ -1,7 +1,11 @@
-const chat = document.getElementById('chat');
-const body = document.getElementById('chat-body');
-const form = document.getElementById('chat-form');
-const input = document.getElementById('chat-text');
+import { FAQ } from './lib/kb.js';
+
+// DOM refs guarded so `node app.js` reaches demo() (AUDIT: demo was unreachable).
+const doc = typeof document !== 'undefined' ? document : null;
+const chat = doc?.getElementById('chat');
+const body = doc?.getElementById('chat-body');
+const form = doc?.getElementById('chat-form');
+const input = doc?.getElementById('chat-text');
 
 const history = [];
 let chatOpened = false;
@@ -11,20 +15,14 @@ function esc(s) {
 }
 
 function render(m) {
-  const div = document.createElement('div');
+  const div = doc.createElement('div');
   div.className = 'msg ' + m.role;
   div.textContent = m.text;
   body.appendChild(div);
   body.scrollTop = body.scrollHeight;
 }
 
-const FAQ = {
-  services: `I'm a freelance AI-automation developer based in Davao City, Philippines. I build:\n\n• AI Chatbots & Agents (WhatsApp/Telegram/website)\n• Workflow Automation (n8n/Make/custom)\n• Web Applications (booking systems, dashboards)\n• Browser Automation (scraping, lead gen)\n• Data Processing (CSV/JSON, APIs, reports)`,
-  projects: `Recent work includes:\n\n📊 DavaoBook — Booking Management System for Davao tourism operators\n🧰 TinyCoder Toolbox — PWA with 5 dev tools (offline-first)\n💬 AI Customer Support Agent — WhatsApp/website chatbot handling 80% of inquiries automatically`,
-  help: `I can help you:\n\n1. Build AI chatbots that handle customer support 24/7\n2. Automate repetitive workflows so your team focuses on growth\n3. Create custom web apps (dashboards, booking, internal tools)\n4. Set up browser automation for scraping and data collection\n5. Process and analyze your data with automated reporting\n\nJust tell me what you need!`,
-  pricing: `Pricing is project-based ($200–$2000) or hourly ($15–$25/hr). I also offer a free consultation call to discuss your needs.\n\nProcess:\n1. Discovery — 1 call to understand your problem\n2. Prototype — 1–2 weeks to build a working version\n3. Production — deploy + handoff, your automation runs 24/7`
-};
-
+// FAQ strings live in lib/kb.js — same module feeds the server system prompt.
 function renderFAQ(question) {
   const answer = FAQ[question];
   if (!answer) return;
@@ -32,43 +30,20 @@ function renderFAQ(question) {
   history.push({ role: 'assistant', content: answer });
 }
 
-function renderOrder(order) {
-  const panel = document.createElement('div');
+// 0055: server parses __ORDER__, validates, inserts the lead, returns
+// {text, leadId} — client never sees the marker. Old client-side marker
+// parse + renderOrder → /api/order flow removed (superseded); /api/order
+// stays up server-side for any stale cached clients.
+function renderLeadPanel(leadId) {
+  const panel = doc.createElement('div');
   panel.className = 'order-panel';
-  function row(label, val) {
-    const p = document.createElement('p');
-    p.innerHTML = `<strong>${label}:</strong> ${esc(val)}`;
-    return p;
-  }
-  panel.appendChild(row('Name', order.name));
-  panel.appendChild(row('Email', order.email));
-  panel.appendChild(row('Project type', order.type));
-  panel.appendChild(row('Details', order.details));
-  const btn = document.createElement('button');
-  btn.className = 'btn';
-  btn.textContent = 'Send Order Request';
-  btn.onclick = async () => {
-    btn.disabled = true;
-    btn.textContent = 'Sending…';
-    try {
-      const res = await fetch('/api/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order)
-      });
-      const ok = res.ok;
-      btn.remove();
-      const done = document.createElement('p');
-      done.textContent = ok
-        ? `Order sent! I'll get back to you at ${order.email} soon.`
-        : 'Failed to send. Please email tiny-coder-2104@agentmail.to directly.';
-      panel.appendChild(done);
-    } catch {
-      btn.disabled = false;
-      btn.textContent = 'Send Order Request';
-    }
-  };
-  panel.appendChild(btn);
+  const p = doc.createElement('p');
+  p.textContent = "Thanks. I've recorded your project inquiry. We'll review the details and get back to you shortly.";
+  const ref = doc.createElement('p');
+  ref.innerHTML = 'Reference: <code></code>';
+  ref.querySelector('code').textContent = String(leadId);
+  panel.appendChild(p);
+  panel.appendChild(ref);
   body.appendChild(panel);
   body.scrollTop = body.scrollHeight;
 }
@@ -79,7 +54,7 @@ async function send() {
   input.value = '';
   render({ role: 'user', text });
   history.push({ role: 'user', content: text });
-  const tdiv = document.createElement('div');
+  const tdiv = doc.createElement('div');
   tdiv.className = 'msg bot typing';
   tdiv.textContent = 'typing…';
   body.appendChild(tdiv);
@@ -103,14 +78,8 @@ async function send() {
     const data = await res.json();
     history.push({ role: 'assistant', content: data.text });
     tdiv.remove();
-    const orderMatch = data.text.match(/__ORDER__\s*(\{[\s\S]*\})/);
-    if (orderMatch) {
-      const order = JSON.parse(orderMatch[1]);
-      render({ role: 'bot', text: data.text.replace(/__ORDER__\s*\{[\s\S]*\}/, '') });
-      renderOrder(order);
-    } else {
-      render({ role: 'bot', text: data.text });
-    }
+    render({ role: 'bot', text: data.text });
+    if (data.leadId) renderLeadPanel(data.leadId);
   } catch (e) {
     tdiv.remove();
     const errMsg = e.name === 'AbortError'
@@ -122,7 +91,7 @@ async function send() {
   }
 }
 
-form.addEventListener('submit', e => { e.preventDefault(); send(); });
+form?.addEventListener('submit', e => { e.preventDefault(); send(); });
 
 function openChat() {
   chat.hidden = false;
@@ -133,15 +102,22 @@ function openChat() {
   input.focus();
 }
 
-document.querySelectorAll('[data-faq]').forEach(btn => {
+doc?.querySelectorAll('[data-faq]').forEach(btn => {
   btn.addEventListener('click', () => {
     const q = btn.dataset.faq;
     renderFAQ(q);
   });
 });
 
-document.querySelector('[data-open-chat]')?.addEventListener('click', openChat);
-document.querySelector('[data-close-chat]')?.addEventListener('click', () => { chat.hidden = true; });
+// "I have a project" pill → open chat + kick off progressive qualification.
+doc?.querySelector('[data-project]')?.addEventListener('click', () => {
+  openChat();
+  input.value = "I have a project I'd like to start";
+  send();
+});
+
+doc?.querySelector('[data-open-chat]')?.addEventListener('click', openChat);
+doc?.querySelector('[data-close-chat]')?.addEventListener('click', () => { chat.hidden = true; });
 
 // ponytail: global rate limit, replace with Redis if multi-instance
 if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv[1]}`) {

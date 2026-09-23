@@ -1,3 +1,7 @@
+// DEPRECATED (tinycoder-0055): the lobby now captures leads server-side via
+// /api/chat (__ORDER__ marker → validated insert → leads table). This endpoint
+// is kept for any stale cached clients still posting here. _mail contract
+// unchanged. Remove once the old app.js cache ages out.
 import { sendOrder } from './_mail.js';
 
 function clean(s) {
