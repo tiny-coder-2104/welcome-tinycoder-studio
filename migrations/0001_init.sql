@@ -105,7 +105,7 @@ language sql
 stable
 as $$
   select lower(coalesce(auth.jwt() ->> 'email', ''))
-       = 'jercon.mahinay@gmail.com'
+       = 'tiny-coder-2104@agentmail.to'
 $$;
 
 -- ─── policies (authenticated only; drop-then-create for re-runnability) ──
