@@ -1,6 +1,7 @@
 import https from 'https';
 import { URL } from 'url';
 import { KB_TEXT, SERVICE_NAMES, FAQ } from '../lib/kb.js';
+import { suggestForLead, suggestionPatch } from '../lib/suggest.js';
 
 const MODEL = 'meta/llama-3.2-11b-vision-instruct';
 const ENDPOINT = 'https://integrate.api.nvidia.com/v1/chat/completions';
@@ -300,6 +301,7 @@ export default async function handler(req, res) {
 
   // Strip + parse marker before it ever reaches the client.
   let leadId;
+  let sugP; // 0056: auto-suggestion runs alongside response composition
   if (text.includes('__ORDER__')) {
     const ex = extractMarker(text);
     if (ex) {
@@ -307,6 +309,18 @@ export default async function handler(req, res) {
       const lead = validateLead(ex.raw);
       if (lead) {
         leadId = await saveLead(lead); // undefined = env missing or insert failed
+        // Best-effort: suggestion failure (null / NVIDIA missing / PATCH error)
+        // must NEVER fail lead creation — try/catch inside, leadId already set.
+        if (leadId) {
+          sugP = (async () => {
+            try {
+              const sug = await suggestForLead(lead);
+              if (sug) await sbRequest('PATCH', '/rest/v1/leads?id=eq.' + leadId, suggestionPatch(sug));
+            } catch (e) {
+              console.warn('[concierge] suggestion update failed:', e.message);
+            }
+          })();
+        }
       } else {
         console.error('[concierge] invalid __ORDER__ payload dropped');
       }
@@ -318,6 +332,7 @@ export default async function handler(req, res) {
     if (idx >= 0) text = text.slice(0, idx).trim();
   }
 
+  if (sugP) await sugP; // inner catch swallows — response always returns
   res.status(r.status === 200 ? 200 : 502).json(leadId ? { text, leadId } : { text });
 }
 

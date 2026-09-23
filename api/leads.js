@@ -14,9 +14,10 @@
 import https from 'https';
 import { URL } from 'url';
 import { STAGES, TRANSITIONS } from '../dashboard/rank.js';
+import { OPERATOR_EMAIL, suggestForLead, suggestionPatch } from '../lib/suggest.js';
 
-// keep in sync with is_admin() in migrations/0001_init.sql (single operator)
-const OPERATOR = 'jercon.mahinay@gmail.com';
+// OPERATOR_EMAIL is single-sourced in lib/suggest.js (0056; demo() greps it) —
+// keep that literal in sync with is_admin() in migrations/0001_init.sql.
 const SOURCE_OK = ['CONCIERGE', 'MANUAL', 'OUTREACH'];
 const PRIORITY_OK = ['LOW', 'MEDIUM', 'HIGH'];
 
@@ -49,7 +50,8 @@ function request(url, { method = 'GET', headers = {}, body } = {}) {
   });
 }
 
-async function verifyAdmin(req) {
+// exported for api/suggest.js (0056) — same GoTrue check, one implementation
+export async function verifyAdmin(req) {
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   if (!token) return false;
   try {
@@ -60,11 +62,12 @@ async function verifyAdmin(req) {
       }
     });
     if (r.status !== 200) return false;
-    return String(JSON.parse(r.body).email || '').toLowerCase() === OPERATOR;
+    return String(JSON.parse(r.body).email || '').toLowerCase() === OPERATOR_EMAIL;
   } catch { return false; }
 }
 
-async function sb(path, opts = {}) {
+// exported for api/suggest.js (0056)
+export async function sb(path, opts = {}) {
   const r = await request(process.env.SUPABASE_URL + '/rest/v1/' + path, {
     method: opts.method || 'GET',
     headers: {
@@ -118,7 +121,19 @@ async function createLead(res, body) {
     method: 'POST',
     body: { lead_id: id, kind: 'create', body: 'manual create (source=' + lead.source + ')' }
   });
+  // 0056: auto-suggestion, best-effort — create already succeeded, failure only logs
+  await applySuggestion(id, lead);
   res.json({ id });
+}
+
+// Fire suggestion + PATCH ai_* (0056). Never throws — primary action wins.
+async function applySuggestion(id, lead) {
+  try {
+    const sug = await suggestForLead(lead);
+    if (sug) await sb('leads?id=eq.' + id, { method: 'PATCH', body: suggestionPatch(sug) });
+  } catch (e) {
+    console.warn('suggest update failed:', e.message);
+  }
 }
 
 async function changeStage(res, body) {
@@ -129,7 +144,7 @@ async function changeStage(res, body) {
   }
   if (!STAGES.includes(to)) return res.status(400).json({ error: 'invalid stage' });
 
-  const cur = await sb('leads?select=id,stage&id=eq.' + id + '&limit=1');
+  const cur = await sb('leads?select=id,stage,name,business_name,type,problem,project_description,budget,timeline,source&id=eq.' + id + '&limit=1');
   if (!cur.length) return res.status(404).json({ error: 'not found' });
   const from = cur[0].stage;
   if (from === to) return res.json({ ok: true, stage: to, changed: false });
@@ -142,6 +157,8 @@ async function changeStage(res, body) {
     method: 'POST',
     body: { lead_id: id, kind: 'stage_change', body: from + ' → ' + to }
   });
+  // 0056: re-suggest on stage change — except LOST (nothing to act on).
+  if (to !== 'LOST') await applySuggestion(id, { ...cur[0], stage: to });
   res.json({ ok: true, stage: to, changed: true });
 }
 

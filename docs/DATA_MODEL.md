@@ -27,7 +27,8 @@ summary         text                    -- LIVE field (human-approved)
 next_action     text                    -- LIVE field (human-approved)
 notes           text
 ai_summary      text                    -- suggestion
-ai_priority     text                    -- suggestion (+ visible reasons)
+ai_priority      text                    -- suggestion (+ visible reasons)
+ai_priority_reason text                  -- visible reason behind ai_priority (0002)
 ai_next_action  text                    -- suggestion
 suggestion_status text default 'pending' -- pending|approved|dismissed
 problem_tags    text[] default '{}'
@@ -83,7 +84,7 @@ effectively just the operator.
 | leads | authenticated (allowlisted email via `auth.uid()` check fn) | SELECT, UPDATE | magic-link session |
 | leads | service-role | INSERT (and validated UPDATE) | server `api/` fn only — **no anon INSERT policy** |
 | activities | anon | — | no policy |
-| activities | authenticated (allowlist) | SELECT | magic-link |
+| activities | authenticated (allowlist) | SELECT, INSERT, UPDATE | magic-link (0056: approve/dismiss rows, draft status flips) |
 | activities | service-role | INSERT | server fn only (system events) |
 | tasks | anon | — | no policy |
 | tasks | authenticated (allowlist) | SELECT, INSERT, UPDATE, DELETE | magic-link (operator CRUD) |

@@ -23,7 +23,7 @@ const LS = 'bos_session';
 const TYPES = ['AI Chatbots & Agents', 'Workflow Automation', 'Web Applications', 'Browser Automation', 'Data Processing'];
 const SOURCES = ['CONCIERGE', 'MANUAL', 'OUTREACH'];
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'];
-const LEAD_COLS = 'id,name,email,phone,business_name,type,problem,project_description,budget,timeline,source,stage,priority,summary,next_action,notes,ai_summary,ai_priority,ai_next_action,suggestion_status,problem_tags,manual_today,created_at,updated_at';
+const LEAD_COLS = 'id,name,email,phone,business_name,type,problem,project_description,budget,timeline,source,stage,priority,summary,next_action,notes,ai_summary,ai_priority,ai_priority_reason,ai_next_action,suggestion_status,problem_tags,manual_today,created_at,updated_at';
 // fields the detail form PATCHes directly (stage is NOT here — it goes through
 // /api/leads for transition check + activity row; ai_* never — 0056 gate)
 const EDIT_KEYS = ['name', 'email', 'phone', 'business_name', 'type', 'problem', 'project_description', 'budget', 'timeline', 'source', 'priority', 'summary', 'next_action', 'notes'];
@@ -402,14 +402,18 @@ async function renderLead(id) {
 
     ${pendingSuggestion ? `
       <div class="suggestion">
-        <b>AI suggestion — pending</b>
+        <b>AI suggestion — pending approval</b>
         ${lead.ai_summary ? `<p><b>Summary:</b> ${esc(lead.ai_summary)}</p>` : ''}
-        ${lead.ai_priority ? `<p><b>Priority:</b> ${esc(lead.ai_priority)}</p>` : ''}
+        ${lead.ai_priority ? `<p><b>Priority:</b> <span class="pri p-${esc(lead.ai_priority)}">${esc(lead.ai_priority)}</span>${lead.ai_priority_reason ? ' — ' + esc(lead.ai_priority_reason) : ''}</p>` : ''}
         ${lead.ai_next_action ? `<p><b>Next:</b> ${esc(lead.ai_next_action)}</p>` : ''}
-        <button class="btn" disabled title="Lands with ticket 0056">Approve</button>
-        <button class="btn" disabled title="Lands with ticket 0056">Dismiss</button>
-        <!-- 0056: approve flow — buttons render when ai_* pending; wiring (copy to
-             live fields, flip suggestion_status, activity row) is ticket 0056. -->
+        <button class="btn" type="button" id="approve-btn">Approve</button>
+        <button class="btn" type="button" id="dismiss-btn">Dismiss</button>
+        <span id="sugg-status" class="status" role="status"></span>
+        <!-- DATA_MODEL approve arrow. Two calls (PATCH lead + POST activity)
+             are NOT atomic — ceiling: a crash between them leaves copied live
+             fields without an audit row. ponytail: PostgREST rpc/transaction
+             if that gap ever matters. ai_* kept on approve (diagram copies,
+             doesn't clear). -->
       </div>` : ''}
 
     <fieldset><legend>PROBLEM TAGS</legend>
@@ -419,11 +423,21 @@ async function renderLead(id) {
 
     <div class="timeline">
       <h3>Activity</h3>
+      <p><button class="btn" type="button" id="draft-btn">Draft follow-up</button>
+         <span id="draft-status" class="status" role="status"></span></p>
       ${acts.length ? acts.map(a => `
         <div class="act">
           <span class="act-kind">${esc(a.kind || '')}</span>
           <time>${new Date(a.created_at).toLocaleString()}</time>
           <div>${esc(a.body || '')}${a.draft_body ? '<br><i>' + esc(a.draft_body) + '</i>' : ''}</div>
+          ${a.kind === 'draft' && a.draft_body ? `
+            <div class="act-actions">
+              <button class="btn copy-draft" type="button" data-draft="${esc(a.draft_body)}">Copy</button>
+              <select class="draft-status" data-id="${a.id}" aria-label="draft status">
+                ${['pending', 'sent', 'discarded'].map(s =>
+                  `<option value="${s}" ${a.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </div>` : ''}
         </div>`).join('')
       : '<p class="muted">No activities yet.</p>'}
     </div>
@@ -465,6 +479,130 @@ async function renderLead(id) {
       if (st) { st.className = 'status err'; st.textContent = err.message; }
     }
   });
+
+  /* ── 0056: approval gate (DATA_MODEL diagram — approve / dismiss) ────── */
+
+  const suggSt = $('#sugg-status');
+  const setSuggBtns = off => {
+    const a = $('#approve-btn'), d = $('#dismiss-btn');
+    if (a) a.disabled = off;
+    if (d) d.disabled = off;
+  };
+
+  const approveBtn = $('#approve-btn');
+  if (approveBtn) approveBtn.addEventListener('click', async () => {
+    suggSt.className = 'status';
+    suggSt.textContent = 'Approving…';
+    setSuggBtns(true);
+    try {
+      // copy ai_* → live fields (NOT atomic with the activity row below —
+      // ceiling noted in the card comment)
+      await rest('leads?id=eq.' + id, {
+        method: 'PATCH',
+        body: {
+          summary: lead.ai_summary,
+          priority: lead.ai_priority,
+          next_action: lead.ai_next_action,
+          suggestion_status: 'approved',
+          updated_at: new Date().toISOString()
+        }
+      });
+      // audit row via new 0002 INSERT policy — best-effort, approve stands
+      try {
+        await rest('activities', {
+          method: 'POST',
+          body: { lead_id: id, kind: 'approve', body: 'Approved: ' + lead.ai_priority }
+        });
+      } catch (e) { console.warn('approve activity row failed:', e.message); }
+      await loadData();
+      await renderLead(id); // pending card gone; live fields feed ranking
+    } catch (err) {
+      suggSt.className = 'status err';
+      suggSt.textContent = err.message;
+      setSuggBtns(false);
+    }
+  });
+
+  const dismissBtn = $('#dismiss-btn');
+  if (dismissBtn) dismissBtn.addEventListener('click', async () => {
+    suggSt.className = 'status';
+    suggSt.textContent = 'Dismissing…';
+    setSuggBtns(true);
+    try {
+      // clear ai_* + flip status (diagram dismiss arrow); live fields untouched
+      await rest('leads?id=eq.' + id, {
+        method: 'PATCH',
+        body: {
+          suggestion_status: 'dismissed',
+          ai_summary: null,
+          ai_priority: null,
+          ai_priority_reason: null,
+          ai_next_action: null,
+          updated_at: new Date().toISOString()
+        }
+      });
+      try {
+        await rest('activities', {
+          method: 'POST',
+          body: { lead_id: id, kind: 'dismiss', body: 'Dismissed suggestion' }
+        });
+      } catch (e) { console.warn('dismiss activity row failed:', e.message); }
+      await loadData();
+      await renderLead(id);
+    } catch (err) {
+      suggSt.className = 'status err';
+      suggSt.textContent = err.message;
+      setSuggBtns(false);
+    }
+  });
+
+  /* ── 0056: follow-up draft (on-demand → /api/suggest.js) ─────────────── */
+
+  $('#draft-btn').addEventListener('click', async () => {
+    const btn = $('#draft-btn');
+    const st = $('#draft-status');
+    btn.disabled = true;
+    st.className = 'status';
+    st.textContent = 'Drafting…';
+    try {
+      const r = await fetch('/api/suggest.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+        body: JSON.stringify({ action: 'draft', lead_id: id })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+      await loadData();
+      await renderLead(id); // new draft row lands in the timeline
+    } catch (err) {
+      btn.disabled = false;
+      st.className = 'status err';
+      st.textContent = err.message;
+    }
+  });
+
+  document.querySelectorAll('.copy-draft').forEach(b =>
+    b.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(b.dataset.draft);
+        b.textContent = 'Copied';
+      } catch { /* clipboard denied — user can select manually */ }
+    }));
+
+  document.querySelectorAll('.draft-status').forEach(sel =>
+    sel.addEventListener('change', async () => {
+      try {
+        // 0002 UPDATE policy: operator flips pending → sent/discarded
+        await rest('activities?id=eq.' + sel.dataset.id, {
+          method: 'PATCH',
+          body: { status: sel.value }
+        });
+        await loadData();
+        await renderLead(id);
+      } catch (err) {
+        console.warn('draft status update failed:', err.message);
+      }
+    }));
 }
 
 /* ── router + boot ─────────────────────────────────────────────────────── */
