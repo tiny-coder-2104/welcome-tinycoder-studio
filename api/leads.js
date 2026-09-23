@@ -14,7 +14,7 @@
 import https from 'https';
 import { URL } from 'url';
 import { STAGES, TRANSITIONS } from '../dashboard/rank.js';
-import { OPERATOR_EMAIL, suggestForLead, suggestionPatch } from '../lib/suggest.js';
+import { OPERATOR_EMAIL } from '../lib/suggest.js';
 
 // OPERATOR_EMAIL is single-sourced in lib/suggest.js (0056; demo() greps it) —
 // keep that literal in sync with is_admin() in migrations/0001_init.sql.
@@ -121,19 +121,9 @@ async function createLead(res, body) {
     method: 'POST',
     body: { lead_id: id, kind: 'create', body: 'manual create (source=' + lead.source + ')' }
   });
-  // 0056: auto-suggestion, best-effort — create already succeeded, failure only logs
-  await applySuggestion(id, lead);
+  // AI suggestions generated on-demand by /api/suggest when the lead is
+  // opened (0056 rev: Vercel freezes post-response background tasks).
   res.json({ id });
-}
-
-// Fire suggestion + PATCH ai_* (0056). Never throws — primary action wins.
-async function applySuggestion(id, lead) {
-  try {
-    const sug = await suggestForLead(lead);
-    if (sug) await sb('leads?id=eq.' + id, { method: 'PATCH', body: suggestionPatch(sug) });
-  } catch (e) {
-    console.warn('suggest update failed:', e.message);
-  }
 }
 
 async function changeStage(res, body) {
@@ -157,8 +147,7 @@ async function changeStage(res, body) {
     method: 'POST',
     body: { lead_id: id, kind: 'stage_change', body: from + ' → ' + to }
   });
-  // 0056: re-suggest on stage change — except LOST (nothing to act on).
-  if (to !== 'LOST') await applySuggestion(id, { ...cur[0], stage: to });
+  // Suggestions stay on-demand (/api/suggest on lead open) — no auto re-fire.
   res.json({ ok: true, stage: to, changed: true });
 }
 

@@ -1,13 +1,14 @@
-// api/suggest.js — on-demand follow-up draft (ticket 0056).
-// POST {action:'draft', lead_id} — lead_id only, NEVER free-text to/body/
-// subject (admin hard rule: no path from client raw text toward outbound;
-// this stores a draft activity row for human copy/send, never sends — no
-// auto-send path exists anywhere).
+// api/suggest.js — on-demand AI suggestion + follow-up draft (ticket 0056).
+// POST {action:'suggest'|'draft', lead_id} — lead_id only, NEVER free-text
+// to/body/subject (admin hard rule: no path from client raw text toward
+// outbound; drafts are stored for human copy/send, never sent — no auto-send
+// path exists anywhere). 'suggest' generates ai_* + returns them; 'draft'
+// stores a draft activity row.
 // Auth: caller's GoTrue access token → /auth/v1/user must resolve to
 // OPERATOR_EMAIL (single-sourced in lib/suggest.js). The service-role key
 // lives here, so no public path. Session ≠ data: non-operator → 401.
 // Uses https module — Node 16 has no global fetch (house constraint).
-import { draftForLead } from '../lib/suggest.js';
+import { draftForLead, suggestForLead, suggestionPatch } from '../lib/suggest.js';
 import { verifyAdmin, sb } from './leads.js';
 
 export default async function handler(req, res) {
@@ -25,7 +26,9 @@ export default async function handler(req, res) {
   if (Object.keys(body).some(k => k !== 'action' && k !== 'lead_id')) {
     return res.status(400).json({ error: 'only {action, lead_id} accepted' });
   }
-  if (body.action !== 'draft') return res.status(400).json({ error: 'action must be "draft"' });
+  if (body.action !== 'draft' && body.action !== 'suggest') {
+    return res.status(400).json({ error: 'action must be "draft" or "suggest"' });
+  }
   const id = String(body.lead_id || '');
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     return res.status(400).json({ error: 'lead_id required' });
@@ -35,6 +38,14 @@ export default async function handler(req, res) {
     if (!(await verifyAdmin(req))) return res.status(401).json({ error: 'unauthorized' });
     const rows = await sb('leads?select=*&id=eq.' + id + '&limit=1');
     if (!rows.length) return res.status(404).json({ error: 'not found' });
+
+    if (body.action === 'suggest') {
+      const sug = await suggestForLead(rows[0]);
+      if (!sug) return res.status(502).json({ error: 'suggestion generation failed' });
+      await sb('leads?id=eq.' + id, { method: 'PATCH', body: suggestionPatch(sug) });
+      return res.json({ ok: true, suggestion: sug });
+    }
+
     const draft = await draftForLead(rows[0]);
     if (!draft) return res.status(502).json({ error: 'draft generation failed' });
     await sb('activities', {
@@ -80,6 +91,9 @@ if (typeof process !== 'undefined' && import.meta.url === 'file://' + process.ar
     assert(res.statusCode === 400 && /only/.test(res.body.error), 'free-text key → 400, got ' + res.statusCode);
     res = await run({ method: 'POST', headers: {}, body: { action: 'send', lead_id: VALID_ID } });
     assert(res.statusCode === 400, 'non-draft action → 400, got ' + res.statusCode);
+    // suggest passes the shape/action gate and reaches auth (401, no bearer)
+    res = await run({ method: 'POST', headers: {}, body: { action: 'suggest', lead_id: VALID_ID } });
+    assert(res.statusCode === 401, 'suggest w/o bearer → 401, got ' + res.statusCode);
     res = await run({ method: 'POST', headers: {}, body: { action: 'draft', lead_id: 'nope' } });
     assert(res.statusCode === 400 && res.body.error === 'lead_id required', 'bad lead_id → 400, got ' + res.statusCode);
 

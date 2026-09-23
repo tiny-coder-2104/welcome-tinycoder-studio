@@ -327,6 +327,8 @@ function renderNew() {
   });
 }
 
+const suggestState = {}; // per-lead on-demand suggest: inflight | done | failed
+
 async function renderLead(id) {
   $('#main').innerHTML = '<p class="muted">Loading…</p>';
   let lead = data.leads.find(l => l.id === id);
@@ -337,6 +339,24 @@ async function renderLead(id) {
     $('#main').innerHTML = '<p class="err">Lead not found (or RLS filtered it). <a href="#/today">Back to Today</a></p>';
     return;
   }
+
+  // On-demand AI suggestion (0056 rev): generate when the operator opens a
+  // lead that is pending but has no ai_* yet. Background post-response tasks
+  // freeze on Vercel — generate inside the operator's request instead.
+  if (lead.suggestion_status === 'pending' &&
+      !lead.ai_summary && !lead.ai_priority && !lead.ai_next_action &&
+      !suggestState[id]) {
+    suggestState[id] = 'inflight';
+    fetch('/api/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify({ action: 'suggest', lead_id: id })
+    })
+      .then(r => { suggestState[id] = r.ok ? 'done' : 'failed'; })
+      .catch(() => { suggestState[id] = 'failed'; })
+      .then(() => renderLead(id));
+  }
+  const suggestInflight = suggestState[id] === 'inflight';
 
   let acts = [];
   try {
@@ -400,6 +420,7 @@ async function renderLead(id) {
       </p>
     </fieldset>
 
+    ${suggestInflight ? '<div class="suggestion"><b>Generating AI suggestions…</b></div>' : ''}
     ${pendingSuggestion ? `
       <div class="suggestion">
         <b>AI suggestion — pending approval</b>
@@ -565,7 +586,7 @@ async function renderLead(id) {
     st.className = 'status';
     st.textContent = 'Drafting…';
     try {
-      const r = await fetch('/api/suggest.js', {
+      const r = await fetch('/api/suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
         body: JSON.stringify({ action: 'draft', lead_id: id })
