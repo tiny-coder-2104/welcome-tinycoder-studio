@@ -279,14 +279,23 @@ export default async function handler(req, res) {
 
   let r;
   try {
-    r = await postJson(ENDPOINT, {
+    const payload = {
       model: MODEL,
       messages: [{ role: 'system', content: SYSTEM }, ...messages],
       max_tokens: 350,
       // ponytail: keep 0.65 for chat feel — bad markers fail safe (dropped+logged).
       // If 0059 path tests show malformed/missing markers, drop to 0.3.
       temperature: 0.65
-    }, process.env.NVIDIA_API_KEY);
+    };
+    const t0 = Date.now();
+    r = await postJson(ENDPOINT, payload, process.env.NVIDIA_API_KEY);
+    // NVIDIA free tier fast-fails (429/5xx) intermittently — retry ONCE, but
+    // only if the first attempt failed fast (<3s). Slow failures (timeout)
+    // skip the retry so total time always fits the client's 20s abort.
+    if (r.status !== 200 && Date.now() - t0 < 3000) {
+      await new Promise(res => setTimeout(res, 500));
+      r = await postJson(ENDPOINT, payload, process.env.NVIDIA_API_KEY);
+    }
   } catch {
     return res.status(502).json({ text: 'Sorry, something went wrong. Please try again in a moment.' });
   }
