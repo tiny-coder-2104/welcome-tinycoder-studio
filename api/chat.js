@@ -112,12 +112,21 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // exported for 0055 smoke test / 0059 path tests; handler usage unchanged.
 export function validateLead(raw) {
   let obj;
-  try { obj = JSON.parse(raw); } catch { return null; }
+  const s0 = String(raw);
+  try { obj = JSON.parse(s0); }
+  catch {
+    // llama often emits literal control chars (newlines from pretty-printing
+    // or inside strings) — JSON forbids them unescaped. Whitespace between
+    // tokens stays valid when mapped to space; inside strings it repairs.
+    try { obj = JSON.parse(s0.replace(/[\x00-\x1f]/g, ' ')); } catch { return null; }
+  }
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
 
   const s = k => String(obj[k] ?? '').trim();
 
-  const name = s('name');
+  // name falls back to business_name — B2B inquiries often arrive with only
+  // a business name (observed live: "Yuki resort" with no personal name).
+  const name = s('name') || s('business_name');
   if (!name || name.length > 200) return null;
 
   const email = s('email');
@@ -282,7 +291,7 @@ export default async function handler(req, res) {
     const payload = {
       model: MODEL,
       messages: [{ role: 'system', content: SYSTEM }, ...messages],
-      max_tokens: 350,
+      max_tokens: 600, // 350 truncated the marker after long summaries (live bug)
       // ponytail: keep 0.65 for chat feel — bad markers fail safe (dropped+logged).
       // If 0059 path tests show malformed/missing markers, drop to 0.3.
       temperature: 0.65
@@ -331,7 +340,8 @@ export default async function handler(req, res) {
           })();
         }
       } else {
-        console.error('[concierge] invalid __ORDER__ payload dropped');
+        // Forensics: size + excerpt so 0059 can see WHY validation rejected.
+        console.error('[concierge] invalid __ORDER__ payload dropped', 'len=' + ex.raw.length, ex.raw.slice(0, 180));
       }
     } else {
       console.error('[concierge] malformed __ORDER__ marker dropped');
@@ -339,6 +349,14 @@ export default async function handler(req, res) {
     // Safety net: no marker leakage, ever (covers truncated/dangling output).
     const idx = text.indexOf('__ORDER__');
     if (idx >= 0) text = text.slice(0, idx).trim();
+  }
+
+  // Model sometimes emits ONLY the marker (no visible confirmation) — after
+  // stripping, never ship an empty bubble.
+  if (!text.trim()) {
+    text = leadId
+      ? "Thanks. I've recorded your project inquiry. We'll review the details and determine the best next step."
+      : 'Thanks — could you share your name and how we can reach you so I can pass this along?';
   }
 
   // Suggestion runs in background — NEVER delay the chat response on it.
@@ -390,6 +408,14 @@ if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv
     assert(validateLead('{"name":"A","email":"a@b.co","type":"Web Applications","problem":"' + 'x'.repeat(1001) + '"}') === null, 'oversize problem rejected');
     assert(validateLead('{"name":"A","email":"a@b.co","type":"Web Applications","project_description":"' + 'x'.repeat(1001) + '"}') === null, 'oversize description rejected');
     assert(validateLead('{"email":"a@b.co","type":"Web Applications","problem":"x"}') === null, 'missing name rejected');
+    assert(validateLead('{"email":"a@b.co","type":"Web Applications","problem":"x"}') === null, 'missing name AND business_name rejected');
+    // name fallback: B2B inquiry with only business_name (live bug: Yuki resort)
+    const biz = validateLead('{"name":"","business_name":"Yuki Resort","email":"a@b.co","type":"AI Chatbots & Agents","problem":"room inquiries"}');
+    assert(biz && biz.name === 'Yuki Resort', 'name falls back to business_name');
+    // control-char repair: literal newline inside a JSON string (llama habit)
+    const ctrlPayload = '{"name":"A' + String.fromCharCode(10) + 'B","email":"a@b.co","type":"Web Applications","problem":"x"}';
+    const fixed = validateLead(ctrlPayload);
+    assert(fixed && fixed.name === 'A B', 'control chars inside strings repaired to spaces');
     assert(validateLead('{"name":"A","type":"Web Applications"}') === null, 'no problem/description rejected (intent gate)');
     assert(validateLead('not json at all') === null, 'non-JSON rejected');
 
