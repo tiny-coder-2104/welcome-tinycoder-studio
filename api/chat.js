@@ -265,6 +265,19 @@ export default async function handler(req, res) {
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { body = null; }
   }
+
+  // 0060 intake: static form POSTs {lead:{...}} — reuses validateLead +
+  // saveLead + rate limiter, bypasses messages check and NVIDIA entirely
+  // (placed before both so the form works offline / when the LLM is down).
+  if (body && body.lead) {
+    const lead = validateLead(JSON.stringify(body.lead));
+    if (!lead) {
+      return res.status(400).json({ text: 'Please add your name (or business name), pick a service, and describe the project.' });
+    }
+    const leadId = await saveLead(lead); // undefined = env missing or insert failed
+    return res.status(200).json({ text: "Got it. We'll reply within 1 business day.", leadId });
+  }
+
   let messages = body?.messages || [];
 
   if (!validateMessages(messages)) {
@@ -352,7 +365,7 @@ export default async function handler(req, res) {
 
 // ponytail: global rate limit, replace with Redis if multi-instance
 if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv[1]}`) {
-  function demo() {
+  async function demo() {
     const assert = (cond, msg) => { if (!cond) throw new Error('FAIL: ' + msg); };
 
     // rate limit / abuse (existing)
@@ -408,7 +421,36 @@ if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv
     assert(KB_TEXT.includes('Pricing') && KB_TEXT.includes('$200'), 'KB has pricing');
     assert(typeof FAQ.pricing === 'string' && FAQ.pricing.includes('$200'), 'FAQ pricing from KB');
 
+    // 0060 intake branch: form bypasses LLM (before messages + NVIDIA checks)
+    const mkRes = () => {
+      const r = { code: 0, body: null };
+      r.status = c => { r.code = c; return r; };
+      r.json = o => { r.body = o; return r; };
+      return r;
+    };
+    const env = {
+      u: process.env.SUPABASE_URL,
+      k: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      n: process.env.NVIDIA_API_KEY
+    };
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete process.env.NVIDIA_API_KEY;
+    try {
+      const r1 = mkRes();
+      await handler({ method: 'POST', headers: { 'x-forwarded-for': 'demo-intake-1' }, body: { lead: { name: 'Ana', problem: 'Need a booking site for my resort' } } }, r1);
+      assert(r1.code === 400 && /name/.test(r1.body.text), 'intake missing type returns 400');
+
+      const r2 = mkRes();
+      await handler({ method: 'POST', headers: { 'x-forwarded-for': 'demo-intake-2' }, body: { lead: { name: 'Ana Cruz', email: 'ana@example.com', type: 'Web Applications', problem: 'Need a booking system for a resort — too many phone inquiries daily' } } }, r2);
+      assert(r2.code === 200 && !r2.body.leadId && /1 business day/.test(r2.body.text), 'intake valid lead without env returns 200 without leadId');
+    } finally {
+      if (env.u !== undefined) process.env.SUPABASE_URL = env.u;
+      if (env.k !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = env.k;
+      if (env.n !== undefined) process.env.NVIDIA_API_KEY = env.n;
+    }
+
     console.log('All demo checks passed.');
   }
-  demo();
+  demo().catch(e => { console.error(e && e.message || e); process.exit(1); });
 }

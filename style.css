@@ -177,6 +177,61 @@ main { min-height: 100vh; }
   line-height: 1.7;
 }
 
+/* 0060: hero CTA — form primary, chat secondary */
+.hero-cta {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+.hero-under {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+a.pill { text-decoration: none; display: inline-block; }
+
+/* chat-error fallback link (0060) */
+.msg.bot a { color: var(--terracotta); }
+
+/* Intake form (0060) — reuses .pill / accent palette */
+.intake-page { max-width: 640px; margin: 5.5rem auto 3rem; padding: 0 1.25rem; }
+.intake-page .sub { color: var(--text-muted); margin-bottom: 1.5rem; }
+.intake-page form { display: flex; flex-direction: column; gap: 0.75rem; }
+.intake-page label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.intake-page .opt { font-weight: 400; color: var(--text-muted); }
+.intake-page input,
+.intake-page select,
+.intake-page textarea {
+  font: inherit;
+  font-weight: 400;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 0.5rem 0.65rem;
+}
+.intake-page textarea { min-height: 120px; resize: vertical; }
+.intake-page button[type="submit"] {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.intake-page .status { min-height: 1.4em; font-size: 0.95rem; margin: 0; }
+.intake-page .status.err { color: var(--terracotta); }
+.intake-page .alt { margin-top: 1.25rem; font-size: 0.9rem; }
+
 /* Chat panel — 50% wider (340→510) */
 .chat-panel {
   position: absolute;

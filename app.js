@@ -55,6 +55,21 @@ function renderLeadPanel(leadId) {
   body.scrollTop = body.scrollHeight;
 }
 
+// 0060: chat-error fallback → static form (render() is textContent-only,
+// so this needs a real element for the link). Shown once per session.
+function renderChatFallback() {
+  if (doc.getElementById('chat-fallback')) return;
+  const div = doc.createElement('div');
+  div.id = 'chat-fallback';
+  div.className = 'msg bot';
+  const a = doc.createElement('a');
+  a.href = '/intake.html';
+  a.textContent = "Chat's having trouble — send your project details as a form instead.";
+  div.appendChild(a);
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
 async function send() {
   const text = input.value.trim();
   if (!text) return;
@@ -95,6 +110,7 @@ async function send() {
           ? e.message
           : 'Sorry, something went wrong. Please try again in a moment.');
     render({ role: 'bot', text: errMsg });
+    renderChatFallback();
   }
 }
 
@@ -114,13 +130,6 @@ doc?.querySelectorAll('[data-faq]').forEach(btn => {
     const q = btn.dataset.faq;
     renderFAQ(q);
   });
-});
-
-// "I have a project" pill → open chat + kick off progressive qualification.
-doc?.querySelector('[data-project]')?.addEventListener('click', () => {
-  openChat();
-  input.value = "I have a project I'd like to start";
-  send();
 });
 
 doc?.querySelector('[data-open-chat]')?.addEventListener('click', openChat);

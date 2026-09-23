@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Start your project with TinyCoder Studio — AI chatbots, automation, and web apps. Davao City, Philippines." />
+    <title>Start your project • TinyCoder Studio</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <span class="brand">TinyCoder Studio</span>
+        <span class="location">🇵🇭 Davao City, PH</span>
+      </nav>
+    </header>
+
+    <main class="intake-page">
+      <h1>Start your project</h1>
+      <p class="sub">Tell us what you're building — same team, same pipeline, no chatbot wait.</p>
+
+      <form id="intake-form">
+        <label>Your name
+          <input name="name" maxlength="200" autocomplete="name" placeholder="Ana Cruz" />
+        </label>
+        <label>Email
+          <input name="email" type="email" maxlength="200" autocomplete="email" placeholder="ana@example.com" />
+        </label>
+        <label>Business name <span class="opt">(optional)</span>
+          <input name="business_name" maxlength="200" autocomplete="organization" />
+        </label>
+        <label>What do you need? *
+          <select name="type" id="intake-type" required>
+            <option value="">Select a service…</option>
+          </select>
+        </label>
+        <label>Project details *
+          <textarea name="problem" required maxlength="1000" placeholder="What are you trying to build or fix? Links, current tools, and pain points help."></textarea>
+        </label>
+        <label>Budget <span class="opt">(optional)</span>
+          <input name="budget" maxlength="200" placeholder="e.g. $500–$1000" />
+        </label>
+        <label>Timeline <span class="opt">(optional)</span>
+          <input name="timeline" maxlength="200" placeholder="e.g. 2 weeks" />
+        </label>
+        <button type="submit">Send project details</button>
+        <p class="status" id="intake-status" role="status" aria-live="polite"></p>
+      </form>
+
+      <p class="alt"><a href="/">Prefer to talk it through? → Ask the concierge</a></p>
+    </main>
+
+    <footer>© 2026 TinyCoder Studio • Virtual Office • Davao City, PH</footer>
+
+    <script type="module">
+      // 0060: static form → POST {lead} to /api/chat intake branch.
+      // Never sends source/stage/priority — forced server-side.
+      import { SERVICE_NAMES } from '/lib/kb.js';
+
+      const sel = document.getElementById('intake-type');
+      for (const n of SERVICE_NAMES) {
+        const o = document.createElement('option');
+        o.value = n;
+        o.textContent = n;
+        sel.appendChild(o);
+      }
+
+      const form = document.getElementById('intake-form');
+      const status = document.getElementById('intake-status');
+
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const lead = Object.fromEntries(new FormData(form));
+        // server accepts name OR business_name — mirror that instead of HTML required
+        if (!lead.name.trim() && !lead.business_name.trim()) {
+          status.textContent = 'Please enter your name or business name.';
+          status.className = 'status err';
+          return;
+        }
+        status.textContent = 'Sending…';
+        status.className = 'status';
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lead })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            status.textContent = data.text || 'Something went wrong — please try again.';
+            status.className = 'status err';
+            return;
+          }
+          status.textContent = data.text;
+          form.reset();
+        } catch {
+          status.textContent = "Something went wrong — please try again, or ask the concierge.";
+          status.className = 'status err';
+        }
+      });
+    </script>
+  </body>
+</html>
