@@ -26,7 +26,7 @@ const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH'];
 const LEAD_COLS = 'id,name,email,phone,business_name,type,problem,project_description,budget,timeline,source,stage,priority,summary,next_action,notes,ai_summary,ai_priority,ai_priority_reason,ai_next_action,suggestion_status,problem_tags,manual_today,created_at,updated_at';
 // fields the detail form PATCHes directly (stage is NOT here — it goes through
 // /api/leads for transition check + activity row; ai_* never — 0056 gate)
-const EDIT_KEYS = ['name', 'email', 'phone', 'business_name', 'type', 'problem', 'project_description', 'budget', 'timeline', 'source', 'priority', 'summary', 'next_action', 'notes'];
+const EDIT_KEYS = ['name', 'email', 'phone', 'business_name', 'type', 'problem', 'project_description', 'budget', 'timeline', 'source', 'priority', 'summary', 'next_action', 'notes', 'problem_tags'];
 
 let session = null;
 let data = { leads: [], tasks: [] };
@@ -267,6 +267,7 @@ function renderPipeline(stage) {
   if (stage && STAGES.includes(stage)) return renderLeadList(stage);
   $('#main').innerHTML = `
     <h2>Pipeline</h2>
+    <label>Filter by tag<input id="tag-filter" type="text" placeholder="e.g. booking" /></label>
     <div class="board">
       ${STAGES.map(s => `
         <a class="col" href="#/pipeline/${s}">
@@ -274,7 +275,29 @@ function renderPipeline(stage) {
           <span class="count-big">${data.leads.filter(l => l.stage === s).length}</span>
         </a>`).join('')}
     </div>
+    <div id="tag-results"></div>
     <p class="muted">Click a column for its lead list.</p>`;
+
+  // 0058: client-side tag filter, no debounce (small data)
+  $('#tag-filter').addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase();
+    const matches = q
+      ? data.leads.filter(l => (l.problem_tags || []).some(t => t.toLowerCase().includes(q)))
+      : [];
+    $('#tag-results').innerHTML = matches.length ? `
+      <h3>Leads tagged "${esc(e.target.value.trim())}" (${matches.length})</h3>
+      <table class="tbl">
+        <tr><th>Name</th><th>Business</th><th>Stage</th><th>Tags</th></tr>
+        ${matches.map(l => `
+          <tr>
+            <td><a href="#/lead/${l.id}">${esc(l.name)}</a></td>
+            <td>${esc(l.business_name || '—')}</td>
+            <td><span class="badge b-${l.stage}">${l.stage}</span></td>
+            <td>${(l.problem_tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</td>
+          </tr>`).join('')}
+      </table>`
+    : '';
+  });
 }
 
 function renderLeadList(stage) {
@@ -364,7 +387,6 @@ async function renderLead(id) {
   } catch {}
 
   const trans = TRANSITIONS[lead.stage] || [];
-  const tags = lead.problem_tags || [];
   const pendingSuggestion = lead.suggestion_status === 'pending' &&
     (lead.ai_summary || lead.ai_priority || lead.ai_next_action);
 
@@ -399,6 +421,7 @@ async function renderLead(id) {
       </fieldset>
       <fieldset><legend>LIVE FIELDS + PRIORITY</legend>
         ${liveFieldsHTML(lead)}
+        ${inp('problem_tags', 'Problem tags (comma-separated)', (lead.problem_tags || []).join(', '))}
       </fieldset>
       <button class="btn" type="submit">Save</button>
       <span id="save-status" class="status" role="status"></span>
@@ -438,11 +461,6 @@ async function renderLead(id) {
              doesn't clear). -->
       </div>` : ''}
 
-    <fieldset><legend>PROBLEM TAGS</legend>
-      <p>${tags.length ? tags.map(t => `<span class="tag">${esc(t)}</span>`).join('') : '<span class="muted">none</span>'}</p>
-      <p class="muted">Read-only — editing ships with ticket 0058.</p>
-    </fieldset>
-
     <div class="timeline">
       <h3>Activity</h3>
       <p><button class="btn" type="button" id="draft-btn">Draft follow-up</button>
@@ -474,6 +492,7 @@ async function renderLead(id) {
     st.textContent = 'Saving…';
     try {
       const body = readForm(e.target, EDIT_KEYS);
+      body.problem_tags = body.problem_tags.split(',').map(s => s.trim()).filter(Boolean);
       body.manual_today = e.target.querySelector('[name=manual_today]').checked;
       await rest('leads?id=eq.' + id, { method: 'PATCH', body });
       await loadData();

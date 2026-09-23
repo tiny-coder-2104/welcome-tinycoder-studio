@@ -164,6 +164,25 @@ export function validateLead(raw) {
   };
 }
 
+// 0058: static keyword → problem_tags seeding (no LLM). saveLead is the
+// single funnel (chat marker + intake + contact), so seeding here covers all.
+const TAG_KEYWORDS = {
+  booking: ['booking', 'reservation', 'availability'],
+  chatbot: ['chatbot', 'whatsapp', 'messenger', 'bot'],
+  website: ['website', 'site', 'landing'],
+  automation: ['automation', 'workflow', 'n8n', 'integrat'],
+  data: ['data', 'report', 'dashboard', 'scrap']
+};
+
+export function seedTags(lead) {
+  const p = String(lead.problem || '').toLowerCase();
+  const tags = Object.entries(TAG_KEYWORDS)
+    .filter(([, kws]) => kws.some(k => p.includes(k)))
+    .map(([tag]) => tag);
+  if (tags.length) lead.problem_tags = tags;
+  return lead;
+}
+
 function sbRequest(method, path, payload) {
   return new Promise((resolve, reject) => {
     const u = new URL(process.env.SUPABASE_URL + path);
@@ -198,6 +217,7 @@ function sbRequest(method, path, payload) {
 let sbWarned = false;
 
 export async function saveLead(lead) {
+  seedTags(lead);
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     // 503-soft: chat keeps working pre-config, log once (order.js pattern)
     if (!sbWarned) {
@@ -440,6 +460,10 @@ if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv
     assert(fixed && fixed.name === 'A B', 'control chars inside strings repaired to spaces');
     assert(validateLead('{"name":"A","type":"Web Applications"}') === null, 'no problem/description rejected (intent gate)');
     assert(validateLead('not json at all') === null, 'non-JSON rejected');
+
+    // 0058: keyword seeding (offline — pure function, no env needed)
+    assert(seedTags({ problem: 'Need a booking system for my resort' }).problem_tags.includes('booking'), 'booking keyword seeds booking tag');
+    assert(seedTags({ problem: 'Just a general question' }).problem_tags === undefined, 'no keyword match leaves tags unset');
 
     // KB module: services + pricing keys present
     assert(SERVICE_NAMES.length === 5, 'KB has five services');
