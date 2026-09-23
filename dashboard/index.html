@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <title>TinyCoder Business OS • Dashboard</title>
-    <link rel="stylesheet" href="./style.css" />
+    <!-- 0071: absolute paths — ./style.css from /dashboard (no slash) resolves to /style.css (landing CSS) -->
+    <link rel="stylesheet" href="/dashboard/style.css" />
   </head>
   <body>
     <!-- Login: shown until a magic-link session exists. RLS is the real gate. -->
@@ -35,6 +36,6 @@
       <main id="main"></main>
     </div>
 
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="/dashboard/app.js"></script>
   </body>
 </html>

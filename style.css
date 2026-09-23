@@ -415,6 +415,12 @@ footer {
 }
 
 /* Responsive */
+/* 0070: short viewports — bottom-anchored menu (22%) rises into top-anchored hero
+   below ~855px height. 12% clears hero at 800/768px; 1440x900 (22%) untouched. */
+@media (max-height: 860px) {
+  .option-menu { bottom: 12%; }
+}
+
 @media (max-width: 768px) {
   .concierge { width: 280px; }
   .concierge-layer {
