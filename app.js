@@ -10,6 +10,13 @@ const input = doc?.getElementById('chat-text');
 const history = [];
 let chatOpened = false;
 
+// Magic-link fallback: if GoTrue redirects to Site URL (/) instead of
+// /dashboard/ (redirect-allowlist mismatch), tokens land here in the hash.
+// Forward them — dashboard's sessionFromHash() does the actual save.
+if (doc && /(?:access_token|error)=/.test(location.hash)) {
+  location.replace('/dashboard/' + location.hash);
+}
+
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -61,7 +68,7 @@ async function send() {
   body.scrollTop = body.scrollHeight;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 20000); // > server's 15s NVIDIA timeout + overhead
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

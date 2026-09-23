@@ -78,7 +78,7 @@ function postJson(url, payload, key) {
       hostname: u.hostname,
       path: u.pathname,
       method: 'POST',
-      timeout: 8000,
+      timeout: 15000, // NVIDIA cold starts observed >8s — was 8000, caused 502s
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + key,
@@ -332,7 +332,11 @@ export default async function handler(req, res) {
     if (idx >= 0) text = text.slice(0, idx).trim();
   }
 
-  if (sugP) await sugP; // inner catch swallows — response always returns
+  // Suggestion runs in background — NEVER delay the chat response on it.
+  // ponytail: fire-and-forget after res — Vercel keeps the instance alive while
+  // the promise is pending; if suggestions start going missing in prod, switch
+  // to waitUntil(). Lead insert above IS awaited (response needs leadId).
+  if (sugP) sugP.catch(() => {});
   res.status(r.status === 200 ? 200 : 502).json(leadId ? { text, leadId } : { text });
 }
 
