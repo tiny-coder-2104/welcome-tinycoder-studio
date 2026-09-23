@@ -1,0 +1,218 @@
+{
+  "check1": {
+    "data": {
+      "found": true,
+      "pillCount": 5,
+      "labels": [
+        "Start a project",
+        "What we do",
+        "Pricing & FAQ",
+        "Contact us",
+        "Talk to a concierge"
+      ],
+      "expected": [
+        {
+          "label": "AI Chatbots & Agents",
+          "present": false
+        },
+        {
+          "label": "Workflow Automation",
+          "present": false
+        },
+        {
+          "label": "Web Applications",
+          "present": false
+        },
+        {
+          "label": "Browser Automation",
+          "present": false
+        },
+        {
+          "label": "Data Processing",
+          "present": false
+        }
+      ],
+      "allExpectedPresent": false,
+      "menuRect": {
+        "top": 429.8,
+        "bottom": 702,
+        "left": 894,
+        "right": 1404
+      }
+    },
+    "consoleLogs": [],
+    "pageErrors": []
+  },
+  "check2": {
+    "clickedPill": "Talk to a concierge",
+    "before": {
+      "chatHiddenAttr": true,
+      "chatRect": {
+        "w": 0,
+        "h": 0,
+        "top": 0
+      },
+      "chatVisible": false,
+      "menuVisible": true,
+      "iframes": [],
+      "chatWidgetsInDom": [
+        "#chat",
+        ".chat-panel",
+        "[data-open-chat]"
+      ]
+    },
+    "after": {
+      "chatHiddenAttr": false,
+      "chatRect": {
+        "w": 510,
+        "h": 466.3,
+        "top": 388.7
+      },
+      "chatVisible": true,
+      "menuVisible": false,
+      "chatInputVisible": true
+    },
+    "consoleLogs": [],
+    "pageErrors": []
+  },
+  "check3": {
+    "data": {
+      "viewport": "1280x800",
+      "heroRects": {
+        "hero": {
+          "top": 102.3,
+          "bottom": 391.9,
+          "left": 796,
+          "right": 1216,
+          "width": 420,
+          "height": 289.6
+        },
+        "h1": {
+          "top": 102.3,
+          "bottom": 225.2,
+          "left": 796,
+          "right": 1216,
+          "width": 420,
+          "height": 122.9
+        },
+        "p": {
+          "top": 241.2,
+          "bottom": 326.8,
+          "left": 796,
+          "right": 1216,
+          "width": 420,
+          "height": 85.6
+        },
+        "heroUnder": {
+          "top": 334.8,
+          "bottom": 391.9,
+          "left": 796,
+          "right": 1216,
+          "width": 420,
+          "height": 57.1
+        }
+      },
+      "menuRect": {
+        "top": 351.8,
+        "bottom": 624,
+        "left": 738,
+        "right": 1248,
+        "width": 510,
+        "height": 272.2
+      },
+      "pillRects": [
+        {
+          "label": "Start a project",
+          "rect": {
+            "top": 368.8,
+            "bottom": 411.5,
+            "left": 755,
+            "right": 1231,
+            "width": 476,
+            "height": 42.6
+          }
+        },
+        {
+          "label": "What we do",
+          "rect": {
+            "top": 419.5,
+            "bottom": 462.1,
+            "left": 755,
+            "right": 1231,
+            "width": 476,
+            "height": 42.6
+          }
+        },
+        {
+          "label": "Pricing & FAQ",
+          "rect": {
+            "top": 470.1,
+            "bottom": 512.8,
+            "left": 755,
+            "right": 1231,
+            "width": 476,
+            "height": 42.6
+          }
+        },
+        {
+          "label": "Contact us",
+          "rect": {
+            "top": 520.8,
+            "bottom": 563.4,
+            "left": 755,
+            "right": 1231,
+            "width": 476,
+            "height": 42.6
+          }
+        },
+        {
+          "label": "Talk to a concierge",
+          "rect": {
+            "top": 571.4,
+            "bottom": 607,
+            "left": 755,
+            "right": 1231,
+            "width": 476,
+            "height": 35.6
+          }
+        }
+      ],
+      "overlaps": [
+        {
+          "heroEl": "hero",
+          "pill": "Start a project",
+          "overlapPx": 23.1
+        },
+        {
+          "heroEl": "heroUnder",
+          "pill": "Start a project",
+          "overlapPx": 23.1
+        }
+      ],
+      "anyHeroPillOverlap": true,
+      "heroVsMenuOverlap": true
+    },
+    "consoleLogs": [],
+    "pageErrors": []
+  },
+  "check4": {
+    "data": {
+      "loginVisible": true,
+      "formVisible": true,
+      "emailInputVisible": true,
+      "emailInputType": "email",
+      "emailPlaceholder": "operator@email.com",
+      "submitVisible": true,
+      "submitText": "Send magic link",
+      "appHidden": false,
+      "appVisible": true,
+      "mainChildren": 0,
+      "mainText": "",
+      "leadRowsInDom": 0,
+      "bodyHasEmailLike": false,
+      "bodyTextSample": "Business OS\n\nTinyCoder Studio — operator access via magic link\n\n Send magic link\n\nBusiness OS\nToday Pipeline + New lead\nSign out"
+    },
+    "consoleLogs": [],
+    "pageErrors": []
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "checkA_0070": {
+    "1280x800": {
+      "heroRect": { "top": 101.6, "bottom": 391.2, "left": 796, "right": 1216, "width": 420, "height": 289.6 },
+      "menuRect": { "top": 431.8, "bottom": 704, "left": 738, "right": 1248, "width": 510, "height": 272.2 },
+      "firstPillRect": { "label": "Start a project", "top": 448.8, "bottom": 491.5, "left": 755, "right": 1231, "width": 476, "height": 42.6 },
+      "overlapPx": -57.6,
+      "verdict": "PASS",
+      "heroSelector": ".hero-text",
+      "menuSelector": ".option-menu",
+      "pillCount": 5,
+      "repeatRun2_overlapPx": -56.6,
+      "repeatRun2_heroBottom": 392.2
+    },
+    "1440x900": {
+      "heroRect": { "top": 102.1, "bottom": 391.7, "left": 948, "right": 1368, "width": 420, "height": 289.6 },
+      "menuRect": { "top": 429.8, "bottom": 702, "left": 894, "right": 1404, "width": 510, "height": 272.2 },
+      "firstPillRect": { "label": "Start a project", "top": 446.8, "bottom": 489.5, "left": 911, "right": 1387, "width": 476, "height": 42.6 },
+      "overlapPx": -55.1,
+      "verdict": "PASS",
+      "heroSelector": ".hero-text",
+      "menuSelector": ".option-menu",
+      "pillCount": 5,
+      "repeatRun2_overlapPx": -54.9,
+      "repeatRun2_heroBottom": 391.9
+    },
+    "screenshots": [
+      "/home/yuki/ai_works/pseudo_human/tinycoder-studio-office/logs/navigator/2026-09-24-verify-0070/hero-1280x800.png",
+      "/home/yuki/ai_works/pseudo_human/tinycoder-studio-office/logs/navigator/2026-09-24-verify-0070/hero-1440x900.png"
+    ],
+    "note": "Two independent runs. overlapPx = heroRect.bottom - firstPillRect.top. Hero bottom varies ~1px between runs (font rendering); pill tops are stable to 0.1px. dev-worker claimed -57.9 (1280x800) and -56.2 (1440x900); measured -57.6/-56.6 and -55.1/-54.9. Direction and magnitude match; both PASS."
+  },
+  "checkB_0071": {
+    "loginCardVisible": true,
+    "emailInputVisible": true,
+    "emailInputPlaceholder": "operator@email.com",
+    "submitVisible": true,
+    "submitText": "Send magic link",
+    "appComputedDisplay": "none",
+    "appRect": { "top": 0, "bottom": 0, "left": 0, "right": 0, "width": 0, "height": 0 },
+    "leadRowsInDom": 0,
+    "mainChildren": 0,
+    "bodyHasEmailLike": false,
+    "bodyTextSample": "Business OS\n\nTinyCoder Studio — operator access via magic link\n\nSend magic link",
+    "verdict": "PASS",
+    "screenshot": "/home/yuki/ai_works/pseudo_human/tinycoder-studio-office/logs/navigator/2026-09-24-verify-0071/dashboard-login-wall.png"
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

@@ -15,7 +15,7 @@ Run order: Local → Live API → Browser. All checks runnable by tester (bash +
 - **Unauth /api/leads** — `curl -s -w "\n%{http_code}" -X POST $U/api/leads -H 'Content-Type: application/json' -d '{"name":"x"}'` → 401 `{"error":"unauthorized"}`.
 
 ## 3. Browser (navigator, prod)
-1. Landing: `#option-menu` renders 5 pills (AI Chatbots & Agents, Workflow Automation, Web Applications, Browser Automation, Data Processing).
+1. Landing: `#option-menu` renders 5 pills (Start a project, What we do, Pricing & FAQ, Contact us, Talk to a concierge).
 2. Chat hidden by default — no chat widget visible on load; opens after menu selection.
 3. Hero: no text/pill overlap at 1280×800 (screenshot).
 4. Dashboard: anon visit to /dashboard → login wall (magic-link form), no lead data visible.
