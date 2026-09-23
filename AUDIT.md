@@ -61,7 +61,7 @@ Static root serving — Vercel serves the repo root directly. No `public/`, no `
 ## Concierge implementation (`__ORDER__` marker pattern)
 
 1. `api/chat.js` `SYSTEM` prompt embeds all business facts (services, process,
-   pricing `$200–$2000` project / `$15–25/hr` hourly) and instructs the model:
+   pricing `₱15,000–₱150,000` project / `₱1,000–₱2,000/hr` hourly) and instructs the model:
    once name + email + project type + description are all collected, append
    exactly one line: `__ORDER__ {"name":...,"email":...,"type":...,"details":...}`.
    The model **collects** the marker in its output; it is not sent as structured data.

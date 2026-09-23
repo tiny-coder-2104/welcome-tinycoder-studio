@@ -418,8 +418,8 @@ if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv
     // KB module: services + pricing keys present
     assert(SERVICE_NAMES.length === 5, 'KB has five services');
     assert(KB_TEXT.includes('AI Chatbots & Agents'), 'KB has services');
-    assert(KB_TEXT.includes('Pricing') && KB_TEXT.includes('$200'), 'KB has pricing');
-    assert(typeof FAQ.pricing === 'string' && FAQ.pricing.includes('$200'), 'FAQ pricing from KB');
+    assert(KB_TEXT.includes('Pricing') && KB_TEXT.includes('₱15,000'), 'KB has pricing');
+    assert(typeof FAQ.pricing === 'string' && FAQ.pricing.includes('₱15,000'), 'FAQ pricing from KB');
 
     // 0060 intake branch: form bypasses LLM (before messages + NVIDIA checks)
     const mkRes = () => {

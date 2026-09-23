@@ -177,14 +177,6 @@ main { min-height: 100vh; }
   line-height: 1.7;
 }
 
-/* 0060: hero CTA — form primary, chat secondary */
-.hero-cta {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 1rem;
-}
 .hero-under {
   font-size: 0.85rem;
   margin-top: 0.5rem;
@@ -395,7 +387,8 @@ a.pill { text-decoration: none; display: inline-block; }
 }
 
 /* 0061: option menu — chatbox footprint, chat hidden until last option */
-.option-menu { gap: 0.5rem; padding: 1rem; }
+/* 0062: raised from chat-panel's bottom:5% for vertical centering after hero pills removed */
+.option-menu { gap: 0.5rem; padding: 1rem; bottom: 22%; }
 .option-menu .pill {
   display: block;
   width: 100%;

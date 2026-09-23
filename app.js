@@ -134,7 +134,7 @@ doc?.querySelectorAll('[data-faq]').forEach(btn => {
   });
 });
 
-// 0061: querySelectorAll — hero CTA + menu option 4 both open chat
+// 0061: querySelectorAll — menu option 4 opens chat (hero CTA removed in 0062)
 doc?.querySelectorAll('[data-open-chat]').forEach(el => el.addEventListener('click', openChat));
 doc?.querySelector('[data-close-chat]')?.addEventListener('click', () => {
   chat.hidden = true;
@@ -147,7 +147,7 @@ if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv
     const assert = (cond, msg) => { if (!cond) throw new Error('FAIL: ' + msg); };
     assert(esc('<b>hi</b>') === '&lt;b&gt;hi&lt;/b&gt;', 'esc should escape HTML');
     assert(FAQ['services'].includes('AI Chatbots'), 'FAQ services should mention chatbots');
-    assert(FAQ['pricing'].includes('$200'), 'FAQ pricing should mention $200');
+    assert(FAQ['pricing'].includes('₱15,000'), 'FAQ pricing should mention ₱15,000');
     assert(typeof FAQ['projects'] === 'string', 'FAQ projects should be a string');
     console.log('All demo checks passed.');
   }
