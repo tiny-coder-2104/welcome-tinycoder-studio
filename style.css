@@ -156,7 +156,7 @@ main { min-height: 100vh; }
 /* Hero text */
 .hero-text {
   position: absolute;
-  top: 25%;
+  top: 150px; /* 0063: was 25% (224px @1440×900) — −33px overlap with #option-menu */
   right: 5%;
   z-index: 4;
   max-width: 420px;

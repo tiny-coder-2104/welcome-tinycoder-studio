@@ -278,6 +278,32 @@ export default async function handler(req, res) {
     return res.status(200).json({ text: "Got it. We'll reply within 1 business day.", leadId });
   }
 
+  // 0063 contact: {contact:{name,email,message}} — after rate-limit, before
+  // messages/NVIDIA (works offline). Client sends ONLY these three fields;
+  // type/source/stage/priority constructed server-side, never trusted.
+  if (body && body.contact) {
+    const c = body.contact;
+    const name = String(c.name || '').trim();
+    const email = String(c.email || '').trim();
+    const message = String(c.message || '').trim();
+    if (!name || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ text: 'Please add your name and a valid email so we can reply.' });
+    }
+    if (message.length < 20 || message.length > 1000) {
+      return res.status(400).json({ text: 'Please write a message between 20 and 1000 characters.' });
+    }
+    const leadId = await saveLead({
+      name,
+      email,
+      type: 'General Inquiry', // leads.type free text, no CHECK (verified 0001)
+      problem: '[contact] ' + message,
+      source: 'CONCIERGE',
+      stage: 'NEW',
+      priority: 'MEDIUM'
+    });
+    return res.status(200).json({ text: "Got it. We'll reply within 1 business day.", leadId });
+  }
+
   let messages = body?.messages || [];
 
   if (!validateMessages(messages)) {
@@ -444,6 +470,15 @@ if (typeof process !== 'undefined' && import.meta.url === `file://${process.argv
       const r2 = mkRes();
       await handler({ method: 'POST', headers: { 'x-forwarded-for': 'demo-intake-2' }, body: { lead: { name: 'Ana Cruz', email: 'ana@example.com', type: 'Web Applications', problem: 'Need a booking system for a resort — too many phone inquiries daily' } } }, r2);
       assert(r2.code === 200 && !r2.body.leadId && /1 business day/.test(r2.body.text), 'intake valid lead without env returns 200 without leadId');
+
+      // 0063 contact branch (same offline env block)
+      const r3 = mkRes();
+      await handler({ method: 'POST', headers: { 'x-forwarded-for': 'demo-contact-1' }, body: { contact: { name: 'Ana Cruz', email: 'not-an-email', message: 'Hello, I have a question about your automation services.' } } }, r3);
+      assert(r3.code === 400 && /email/.test(r3.body.text), 'contact missing/invalid email returns 400');
+
+      const r4 = mkRes();
+      await handler({ method: 'POST', headers: { 'x-forwarded-for': 'demo-contact-2' }, body: { contact: { name: 'Ana Cruz', email: 'ana@example.com', message: 'Do you build WhatsApp bots for small resorts? Need pricing info.' } } }, r4);
+      assert(r4.code === 200 && !r4.body.leadId && /1 business day/.test(r4.body.text), 'contact valid payload without env returns 200 without leadId');
     } finally {
       if (env.u !== undefined) process.env.SUPABASE_URL = env.u;
       if (env.k !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = env.k;
