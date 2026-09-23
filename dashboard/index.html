@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>TinyCoder Business OS • Dashboard</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <!-- Login: shown until a magic-link session exists. RLS is the real gate. -->
+    <div id="login" class="screen center">
+      <div class="login-card">
+        <h1>Business OS</h1>
+        <p class="muted">TinyCoder Studio — operator access via magic link</p>
+        <form id="login-form">
+          <input type="email" id="login-email" placeholder="operator@email.com" required autocomplete="email" />
+          <button type="submit" id="login-btn" class="btn">Send magic link</button>
+        </form>
+        <p id="login-status" class="status" role="status"></p>
+      </div>
+    </div>
+
+    <!-- App shell: TODAY / PIPELINE / lead detail / new-lead render into #main -->
+    <div id="app" class="screen hidden">
+      <header class="bar">
+        <span class="brand">Business OS</span>
+        <nav>
+          <a href="#/today" data-nav="#/today">Today</a>
+          <a href="#/pipeline" data-nav="#/pipeline">Pipeline</a>
+          <a href="#/new" data-nav="#/new">+ New lead</a>
+        </nav>
+        <button id="signout" class="ghost" type="button">Sign out</button>
+      </header>
+      <main id="main"></main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
