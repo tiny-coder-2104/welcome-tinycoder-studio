@@ -421,6 +421,7 @@ async function renderLead(id) {
     </fieldset>
 
     ${suggestInflight ? '<div class="suggestion"><b>Generating AI suggestions…</b></div>' : ''}
+    ${suggestState[id] === 'failed' ? '<p class="muted">AI suggestion failed to generate — reload the page to retry.</p>' : ''}
     ${pendingSuggestion ? `
       <div class="suggestion">
         <b>AI suggestion — pending approval</b>
