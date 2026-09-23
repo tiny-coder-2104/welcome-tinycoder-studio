@@ -68,7 +68,7 @@ async function send() {
   body.scrollTop = body.scrollHeight;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000); // > server's 15s NVIDIA timeout + overhead
+    const timeout = setTimeout(() => controller.abort(), 25000); // > server's 20s NVIDIA timeout + overhead
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

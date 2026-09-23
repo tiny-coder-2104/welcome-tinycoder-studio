@@ -78,7 +78,7 @@ function postJson(url, payload, key) {
       hostname: u.hostname,
       path: u.pathname,
       method: 'POST',
-      timeout: 15000, // NVIDIA cold starts observed >8s — was 8000, caused 502s
+      timeout: 20000, // NVIDIA free tier often needs 13-15s+ — was 15000, cut slow successes
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + key,
